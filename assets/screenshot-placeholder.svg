@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="Neo4j Employee Agent chatbot preview">
+  <rect width="1200" height="720" fill="#f8fafc"/>
+  <rect x="0" y="0" width="270" height="720" fill="#ffffff"/>
+  <rect x="269" y="0" width="1" height="720" fill="#e5e7eb"/>
+  <rect x="34" y="44" width="56" height="56" rx="8" fill="#7c3aed"/>
+  <text x="51" y="80" fill="#ffffff" font-family="Arial" font-size="28">⌘</text>
+  <text x="108" y="67" fill="#0f172a" font-family="Arial" font-size="24" font-weight="700">Neo4j Agent</text>
+  <text x="108" y="94" fill="#7c3aed" font-family="Arial" font-size="22" font-weight="700">Chatbot</text>
+  <text x="34" y="142" fill="#334155" font-family="Arial" font-size="15">Ask questions about your employee graph.</text>
+  <text x="34" y="210" fill="#111827" font-family="Arial" font-size="15" font-weight="700">Sample Questions</text>
+  <g fill="#ffffff" stroke="#e5e7eb">
+    <rect x="34" y="232" width="204" height="48" rx="8"/>
+    <rect x="34" y="292" width="204" height="66" rx="8"/>
+    <rect x="34" y="370" width="204" height="48" rx="8"/>
+  </g>
+  <text x="64" y="263" fill="#111827" font-family="Arial" font-size="15">Show all employees</text>
+  <text x="64" y="322" fill="#111827" font-family="Arial" font-size="15">Total salary of all</text>
+  <text x="64" y="344" fill="#111827" font-family="Arial" font-size="15">employees?</text>
+  <text x="64" y="401" fill="#111827" font-family="Arial" font-size="15">Highest salary?</text>
+  <rect x="336" y="54" width="56" height="56" rx="28" fill="#ede9fe"/>
+  <text x="348" y="90" fill="#7c3aed" font-family="Arial" font-size="27">🧠</text>
+  <text x="416" y="82" fill="#0f172a" font-family="Arial" font-size="30" font-weight="700">Neo4j Employee Agent Chatbot</text>
+  <text x="416" y="112" fill="#64748b" font-family="Arial" font-size="16">Ask questions about employees, departments, salaries, managers, and skills.</text>
+  <rect x="336" y="164" width="812" height="74" rx="8" fill="#faf7ff" stroke="#e5e7eb"/>
+  <rect x="362" y="186" width="38" height="38" rx="8" fill="#ede9fe"/>
+  <text x="416" y="193" fill="#6d28d9" font-family="Arial" font-size="15" font-weight="700">You</text>
+  <text x="416" y="218" fill="#111827" font-family="Arial" font-size="16">Who has the highest salary?</text>
+  <rect x="336" y="264" width="812" height="190" rx="8" fill="#f0fdf4" stroke="#d1fae5"/>
+  <rect x="362" y="288" width="38" height="38" rx="8" fill="#dcfce7"/>
+  <text x="416" y="297" fill="#16a34a" font-family="Arial" font-size="15" font-weight="700">Neo4j Agent</text>
+  <text x="416" y="324" fill="#111827" font-family="Arial" font-size="16">The highest paid employee is Sara Thomas with a salary of 142,000.</text>
+  <rect x="416" y="356" width="690" height="54" rx="8" fill="#0f172a"/>
+  <text x="438" y="390" fill="#f8fafc" font-family="Consolas, monospace" font-size="14">MATCH (e:Employee) RETURN e.name, e.salary ORDER BY e.salary DESC LIMIT 1</text>
+  <rect x="336" y="600" width="812" height="52" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="360" y="633" fill="#94a3b8" font-family="Arial" font-size="16">Ask a question about the employee graph...</text>
+</svg>
