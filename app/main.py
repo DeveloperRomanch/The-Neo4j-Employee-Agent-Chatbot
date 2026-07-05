@@ -276,13 +276,14 @@ def main() -> None:
             st.session_state.messages = []
             st.rerun()
 
-    for message in st.session_state.messages:
-        render_message(message)
-
-    question = st.chat_input("Ask a question about the employee graph...")
+    question = st.chat_input("Ask about employees, departments, salaries..")
     if question:
         run_question(question)
         st.rerun()
+        
+    for message in st.session_state.messages:
+        render_message(message)
+
 
 
 if __name__ == "__main__":

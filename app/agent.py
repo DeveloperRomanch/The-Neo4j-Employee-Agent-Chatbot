@@ -12,6 +12,13 @@ class AgentResult:
 
 def answer_from_records(question: str, records: list[dict]) -> str:
     q = normalize(question)
+    limit = extract_limit(q)
+
+    if limit and is_salary_ranking(q):
+        if not records:
+            return f"I could not find the top {limit} salary records."
+        lines = [f"{row['name']} ({row['salary']:,})" for row in records]
+        return f"Top {len(records)} highest paid employees: " + "; ".join(lines) + "."
 
     if "total" in q and "salary" in q:
         total = records[0].get("totalSalary", 0) if records else 0
@@ -56,6 +63,14 @@ def answer_from_records(question: str, records: list[dict]) -> str:
 
 def build_cypher(question: str) -> str:
     q = normalize(question)
+    limit = extract_limit(q)
+
+    if limit and is_salary_ranking(q):
+        return (
+            "MATCH (e:Employee) "
+            "RETURN e.name AS name, e.title AS title, e.salary AS salary "
+            f"ORDER BY e.salary DESC LIMIT {limit}"
+        )
 
     if "total" in q and "salary" in q:
         return "MATCH (e:Employee) RETURN sum(e.salary) AS totalSalary"
@@ -123,3 +138,17 @@ def find_department(text: str) -> str | None:
         if department in text:
             return department
     return None
+
+
+def extract_limit(text: str) -> int | None:
+    match = re.search(r"\b(?:top|first)\s+(\d+)\b", text)
+    if match:
+        return int(match.group(1))
+    match = re.search(r"\b(\d+)\s+(?:highest|top|best)\b", text)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def is_salary_ranking(text: str) -> bool:
+    return any(word in text for word in ("salary", "paid", "earn", "highest", "top"))

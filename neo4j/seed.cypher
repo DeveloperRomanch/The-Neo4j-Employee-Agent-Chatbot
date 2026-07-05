@@ -28,12 +28,15 @@ MERGE (employee:Employee {id: row.id})
       employee.title = row.title,
       employee.salary = row.salary,
       employee.city = row.city
+WITH employee, row
 MATCH (department:Department {name: row.dept})
 MERGE (employee)-[:WORKS_IN]->(department)
+WITH employee, row
 FOREACH (managerId IN CASE WHEN row.manager IS NULL THEN [] ELSE [row.manager] END |
   MERGE (manager:Employee {id: managerId})
   MERGE (employee)-[:REPORTS_TO]->(manager)
 )
+WITH employee, row
 FOREACH (skillName IN row.skills |
   MERGE (skill:Skill {name: skillName})
   MERGE (employee)-[:HAS_SKILL]->(skill)
