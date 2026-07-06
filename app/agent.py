@@ -34,7 +34,8 @@ chain = GraphCypherQAChain.from_llm(
     graph=graph,
     verbose=True,
     return_intermediate_steps=True,
-    allow_dangerous_requests=True  # Database operations allow karne ke liye zaroori hai
+    allow_dangerous_requests=True,
+    enhanced_schema=False  # <-- Yeh line add karein, isse token size 60-70% kam ho jayega!
 )
 
 def run_agent(question: str) -> AgentResult:
