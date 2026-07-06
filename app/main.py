@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from agent import answer_from_records, build_cypher
+from agent import run_agent
 from graph import EmployeeGraph, load_settings
 
 
@@ -150,23 +150,35 @@ def init_state() -> None:
 
 
 def run_question(question: str) -> None:
-    graph = get_graph()
-    cypher = build_cypher(question)
-    try:
-        records = graph.query(cypher)
-        answer = answer_from_records(question, records)
-    except Exception as exc:
-        records = []
-        answer = f"I could not run the Neo4j query: {exc}"
-    finally:
-        graph.close()
+    """
+    Is function ko humne purani rule-based chain se hata kar
+    naye LangChain + Gemini agent se fully connect kar diya hai.
+    """
+    # 1. Naye agent ko call karke natural language ka text answer aur cypher query ek sath lena
+    agent_result = run_agent(question)
+    answer = agent_result.answer
+    cypher = agent_result.cypher
+
+    records = None
+    
+    # 2. Agar Gemini ne koi valid Cypher query return ki hai, toh use hum graph par execute karenge
+    # Taaki UI mein 'View graph records' ka raw data expander perfectly chalta rahe.
+    if cypher:
+        graph = get_graph()
+        try:
+            records = graph.query(cypher)
+        except Exception:
+            # Agar query execution fail bhi ho jaye, toh front-end crash nahi hoga
+            records = None
+        finally:
+            graph.close()
 
     now = datetime.now().strftime("%I:%M:%S %p")
     st.session_state.messages.append(
         {"role": "user", "content": question, "cypher": None, "records": None, "time": now}
     )
     st.session_state.messages.append(
-        {"role": "assistant", "content": answer, "cypher": cypher, "records": records, "time": now}
+        {"role": "assistant", "content": answer, "cypher": cypher if cypher else None, "records": records if records else None, "time": now}
     )
 
 
@@ -283,7 +295,6 @@ def main() -> None:
         
     for message in st.session_state.messages:
         render_message(message)
-
 
 
 if __name__ == "__main__":
