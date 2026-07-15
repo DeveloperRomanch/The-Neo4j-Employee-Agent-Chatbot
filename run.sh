@@ -5,7 +5,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 if [[ ! -d .venv ]]; then
-  python3 -m venv .venv
+  PYTHON_EXE="python3"
+  if command -v /opt/homebrew/bin/python3 >/dev/null 2>&1; then
+    PYTHON_EXE="/opt/homebrew/bin/python3"
+  elif command -v python3.14 >/dev/null 2>&1; then
+    PYTHON_EXE="python3.14"
+  fi
+  echo "Creating virtual environment using $PYTHON_EXE..."
+  $PYTHON_EXE -m venv .venv
 fi
 
 source .venv/bin/activate

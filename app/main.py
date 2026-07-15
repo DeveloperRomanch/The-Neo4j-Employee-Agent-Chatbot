@@ -7,7 +7,8 @@ import pandas as pd
 import streamlit as st
 
 from agent import run_agent
-from graph import EmployeeGraph, load_settings
+from graph import EmployeeGraph, load_settings, Neo4jSettings
+
 
 
 st.set_page_config(
@@ -133,10 +134,14 @@ div[data-testid="stCodeBlock"] {
 
 
 def get_graph() -> EmployeeGraph:
-    return EmployeeGraph(load_settings())
+    if "neo4j_settings" not in st.session_state:
+        st.session_state.neo4j_settings = load_settings()
+    return EmployeeGraph(st.session_state.neo4j_settings)
 
 
 def init_state() -> None:
+    if "neo4j_settings" not in st.session_state:
+        st.session_state.neo4j_settings = load_settings()
     if "messages" not in st.session_state:
         st.session_state.messages = [
             {
@@ -154,11 +159,13 @@ def run_question(question: str) -> None:
     Is function ko humne purani rule-based chain se hata kar
     naye LangChain + Gemini agent se fully connect kar diya hai.
     """
+    if "neo4j_settings" not in st.session_state:
+        st.session_state.neo4j_settings = load_settings()
     # 1. Naye agent ko call karke natural language ka text answer aur cypher query ek sath lena
-    agent_result = run_agent(question)
-    answer = agent_result.answer
+    agent_result = run_agent(question, settings=st.session_state.neo4j_settings)
     cypher = agent_result.cypher
-
+    answer = agent_result.answer
+    
     records = None
     
     # 2. Agar Gemini ne koi valid Cypher query return ki hai, toh use hum graph par execute karenge
@@ -183,6 +190,11 @@ def run_question(question: str) -> None:
 
 
 def render_message(message: dict) -> None:
+    if message.get("cypher"):
+        st.caption("Cypher query executed")
+        st.code(message["cypher"], language="cypher")
+    
+
     role = message["role"]
     is_user = role == "user"
     avatar = "👤" if is_user else "🧠"
@@ -204,15 +216,6 @@ def render_message(message: dict) -> None:
         """,
         unsafe_allow_html=True,
     )
-
-    if message.get("cypher"):
-        st.caption("Cypher query executed")
-        st.code(message["cypher"], language="cypher")
-
-    if message.get("records"):
-        with st.expander("View graph records", expanded=False):
-            st.dataframe(pd.DataFrame(message["records"]), use_container_width=True)
-
 
 def sidebar() -> None:
     with st.sidebar:
@@ -236,18 +239,37 @@ def sidebar() -> None:
                 st.rerun()
 
         st.subheader("Database Info")
-        settings = load_settings()
+        if "neo4j_settings" not in st.session_state:
+            st.session_state.neo4j_settings = load_settings()
+        settings = st.session_state.neo4j_settings
         st.markdown(f"**Database:** `{settings.database}`")
         st.markdown(f"**URI:** `{settings.uri}`")
+        st.markdown(f"**Username:** `{settings.username}`")
         st.markdown("**Type:** Neo4j graph database")
         st.markdown("**Model:** Employee → Department, Skill, Manager")
+
+        with st.expander("🔌 Configure Neo4j Connection (Desktop / Custom)", expanded=False):
+            uri_input = st.text_input("Bolt URI", value=settings.uri)
+            username_input = st.text_input("Username", value=settings.username)
+            password_input = st.text_input("Password", value=settings.password, type="password")
+            database_input = st.text_input("Database Name", value=settings.database)
+            
+            if st.button("Apply Settings", use_container_width=True):
+                st.session_state.neo4j_settings = Neo4jSettings(
+                    uri=uri_input,
+                    username=username_input,
+                    password=password_input,
+                    database=database_input
+                )
+                st.success("Connection details updated!")
+                st.rerun()
 
         graph = get_graph()
         try:
             if graph.verify_connectivity():
                 st.success("Neo4j is connected.")
             else:
-                st.error("Neo4j is not reachable. Start it with `docker compose up -d`.")
+                st.error("Neo4j is not reachable. Ensure your database is running.")
         except Exception as exc:
             st.error(f"Neo4j connection failed: {exc}")
         finally:
