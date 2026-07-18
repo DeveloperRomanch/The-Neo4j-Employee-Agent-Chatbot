@@ -1,0 +1,33 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Neural Network Icon -->
+  <g>
+    <!-- Main Circle -->
+    <circle cx="100" cy="100" r="55" fill="url(#gradient)" fill-opacity="0.15"/>
+    <circle cx="100" cy="100" r="42" stroke="#3B82F6" stroke-width="8"/>
+    
+    <!-- Synapse Connections -->
+    <circle cx="55" cy="65" r="12" fill="#22D3EE"/>
+    <circle cx="145" cy="65" r="12" fill="#22D3EE"/>
+    <circle cx="55" cy="135" r="12" fill="#22D3EE"/>
+    <circle cx="145" cy="135" r="12" fill="#22D3EE"/>
+    
+    <!-- Connecting Lines -->
+    <line x1="70" y1="70" x2="130" y2="70" stroke="#3B82F6" stroke-width="6" stroke-linecap="round"/>
+    <line x1="70" y1="130" x2="130" y2="130" stroke="#3B82F6" stroke-width="6" stroke-linecap="round"/>
+    <line x1="100" y1="60" x2="100" y2="140" stroke="#22D3EE" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Text -->
+  <text x="220" y="95" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="#1E3A8A">Synapses</text>
+  <text x="220" y="160" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="#0EA5E9">Med</text>
+
+  <!-- Tagline -->
+  <text x="220" y="185" font-family="Arial, sans-serif" font-size="18" fill="#64748B" font-weight="500">NEURAL HEALTH INTELLIGENCE</text>
+</svg>

@@ -29,8 +29,19 @@ def load_css():
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         st.warning("⚠️ styles.css file not found!")
-
-
+def get_logo_svg() -> str:
+    """Load the logo SVG content and strip whitespaces/newlines for markdown compatibility"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(os.path.dirname(current_dir), "assets", "logo.svg")
+        if os.path.exists(logo_path):
+            with open(logo_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                single_line_svg = "".join(line.strip() for line in content.splitlines())
+                return single_line_svg
+    except Exception:
+        pass
+    return ""
 def render_js_helper():
     """Inject JavaScript to manage sidebar responsive collapse/expand behavior"""
     collapse_flag = "true" if st.session_state.get("collapse_sidebar", False) else "false"
@@ -200,7 +211,10 @@ def render_message(message: dict) -> None:
 
 
 def sidebar() -> None:
+    logo_svg = get_logo_svg()
     with st.sidebar:
+        if logo_svg:
+            st.markdown(f'<div class="sidebar-logo">{logo_svg}</div>', unsafe_allow_html=True)
         st.title("Neo4j Agent")
         st.markdown("**Ask natural language questions** about an employee graph database.")
 
@@ -264,15 +278,28 @@ def main():
     sidebar()
 
     # Header
-    st.markdown("""
-        <div class="page-header">
-            <div style="font-size:42px;">🧠</div>
-            <div>
+    logo_svg = get_logo_svg()
+    if logo_svg:
+        st.markdown(f"""
+            <div class="site-branding">
+                {logo_svg}
+            </div>
+            <div class="page-header">
                 <h1>Neo4j Employee Agent Chatbot</h1>
                 <p>Ask questions about employees, departments, salaries, managers, and skills.</p>
             </div>
-        </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+            <div class="site-branding">
+                <span class="branding-logo">🧠</span>
+                <span class="branding-title">SynapsesMed</span>
+            </div>
+            <div class="page-header">
+                <h1>Neo4j Employee Agent Chatbot</h1>
+                <p>Ask questions about employees, departments, salaries, managers, and skills.</p>
+            </div>
+        """, unsafe_allow_html=True)
 
     # Clear Chat Button
     col1, col2 = st.columns([4, 1])
