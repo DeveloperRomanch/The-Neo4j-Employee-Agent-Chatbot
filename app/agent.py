@@ -29,8 +29,8 @@ Rules:
 - Use only the nodes and relationships in the schema.
 - Return only the Cypher query.
 - Always use proper labels and relationship types.
-- For counting use `count(e)`.
-- For highest salary use `ORDER BY e.salary DESC LIMIT 1`.
+- For counting use `count(...)`.
+- For highest/maximum value queries, use `ORDER BY ... DESC LIMIT 1` (where the property is price, revenue, salary, etc.).
 """
 
 cypher_prompt = PromptTemplate.from_template(CYPHER_GENERATION_TEMPLATE)

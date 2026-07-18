@@ -206,7 +206,7 @@ def init_state() -> None:
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": "Ask me about employees, departments, salaries, managers, or skills.",
+                "content": "Ask me about employees, departments, products, shipping services, medical stores, or skills.",
                 "cypher": None,
                 "records": None,
                 "time": datetime.now().strftime("%I:%M:%S %p"),
@@ -280,17 +280,17 @@ def sidebar() -> None:
         if logo_svg:
             st.markdown(f'<div class="sidebar-logo">{logo_svg}</div>', unsafe_allow_html=True)
         st.title("Neo4j Agent")
-        st.markdown("**Ask natural language questions** about an employee graph database.")
+        st.markdown("**Ask natural language questions** about the pharmaceutical knowledge graph.")
 
         st.subheader("Sample Questions")
         sample_questions = [
-            "Show all employees",
-            "What is the total salary of all employees?",
-            "Who has the highest salary?",
-            "List all employees in Engineering department",
-            "Show reporting relationships",
-            "Who has skill Neo4j?",
-            "What is the average salary?",
+            "What are the top 5 highest selling products?",
+            "Which shipping services deliver to MedStore 12?",
+            "Who are the research scientists with Virology skill?",
+            "List all products managed by Research & Development department",
+            "Which stores sell Cardio-1?",
+            "What is the total revenue of all stores in Mumbai?",
+            "Who is the manager of Scientist 5?",
         ]
         for q in sample_questions:
             if st.button(q, use_container_width=True, key=f"btn_{q}"):
@@ -378,8 +378,8 @@ def main():
                 {logo_svg}
             </div>
             <div class="page-header">
-                <h1>Neo4j Employee Agent Chatbot</h1>
-                <p>Ask questions about employees, departments, salaries, managers, and skills.</p>
+                <h1>Pharmaceutical Knowledge Graph Chatbot</h1>
+                <p>Ask questions about pharmaceutical products, medical stores, shipping, employees, and departments.</p>
             </div>
         """, unsafe_allow_html=True)
     else:
@@ -389,13 +389,13 @@ def main():
                 <span class="branding-title">SynapsesMed</span>
             </div>
             <div class="page-header">
-                <h1>Neo4j Employee Agent Chatbot</h1>
-                <p>Ask questions about employees, departments, salaries, managers, and skills.</p>
+                <h1>Pharmaceutical Knowledge Graph Chatbot</h1>
+                <p>Ask questions about pharmaceutical products, medical stores, shipping, employees, and departments.</p>
             </div>
         """, unsafe_allow_html=True)
 
     # Chat Input
-    question = st.chat_input("Ask about employees, departments, salaries..")
+    question = st.chat_input("Ask about pharmaceutical products, stores, shipping, employees..")
     if question:
         if not st.session_state.get("authenticated", False):
             st.session_state.show_login = True
