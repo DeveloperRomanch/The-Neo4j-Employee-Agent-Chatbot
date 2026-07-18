@@ -4,79 +4,97 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import PromptTemplate
 
-from graph import Neo4jSettings
-
-# .env file se keys load karne ke liye
 load_dotenv()
 
 @dataclass(frozen=True)
 class AgentResult:
     answer: str
     cypher: str
+    intermediate_steps: list = None
 
-# 2. Dimaag (Gemini LLM) initialize karna
-# Hum gemini-1.5-flash use kar rahe hain jo fast aur accurate hai. 
-# Temperature=0 taaki yeh sahi aur deterministic Cypher queries banaye.
-llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", 
-                            temperature=0,
-                            api_key=os.getenv("GOOGLE_API_KEY"))
 
-_cached_settings: Neo4jSettings | None = None
-_cached_chain: GraphCypherQAChain | None = None
+# Better system prompt to reduce hallucination
+CYPHER_GENERATION_TEMPLATE = """
+You are an expert Neo4j Cypher query generator.
+You must ONLY return a valid Cypher query. No explanations, no markdown, no extra text.
 
-def get_agent_chain(settings: Neo4jSettings) -> GraphCypherQAChain:
-    global _cached_settings, _cached_chain
-    if _cached_chain is None or _cached_settings != settings:
-        # Purane driver ko close karna if possible, memory/connection leak se bachne ke liyeq
-        if _cached_chain is not None:
-            try:
-                _cached_chain.graph._driver.close()
-            except Exception:
-                pass
-        
+Schema:
+{schema}
+
+Question: {question}
+
+Rules:
+- Use only the nodes and relationships in the schema.
+- Return only the Cypher query.
+- Always use proper labels and relationship types.
+- For counting use `count(e)`.
+- For highest salary use `ORDER BY e.salary DESC LIMIT 1`.
+"""
+
+cypher_prompt = PromptTemplate.from_template(CYPHER_GENERATION_TEMPLATE)
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-3.1-flash-lite",        # Better than lite for reasoning
+    temperature=0.0,                 # Very important for Cypher
+    api_key=os.getenv("GOOGLE_API_KEY")
+)
+
+_cached_graph = None
+_cached_chain = None
+
+
+def get_agent_chain(settings):
+    global _cached_graph, _cached_chain
+
+    if _cached_chain is None:
         graph = Neo4jGraph(
             url=settings.uri,
             username=settings.username,
             password=settings.password,
-            database=settings.database
+            database=settings.database,
+            refresh_schema=True
         )
+        
         _cached_chain = GraphCypherQAChain.from_llm(
             llm=llm,
             graph=graph,
             verbose=True,
             return_intermediate_steps=True,
             allow_dangerous_requests=True,
-            enhanced_schema=False
+            cypher_prompt=cypher_prompt,          # Custom prompt
+            enhanced_schema=True,                 # Better schema understanding
         )
-        _cached_settings = settings
+        _cached_graph = graph
+
     return _cached_chain
 
 
-def run_agent(question: str, settings: Neo4jSettings) -> AgentResult:
-    """
-    Yeh function aapke Streamlit UI se connect hoga.
-    Purani rule-based logic ab poori tarah AI-driven ho gayi hai!
-    """
+def run_agent(question: str, settings) -> AgentResult:
     try:
         chain = get_agent_chain(settings)
-        # LLM se schema ke basis par query chalwana
         response = chain.invoke({"query": question})
 
-        answer = response.get("result", "Mujhe iska jawab nahi mila.")
-        
-        # Intermediate steps se generated Cypher query nikalna taaki UI par dikha sakein
-        steps = response.get("intermediate_steps", [])
+        answer = response.get("result", "Sorry, I couldn't find an answer.")
+        intermediate = response.get("intermediate_steps", [])
+
+        # Extract Cypher query safely
         cypher_query = ""
-        for step in steps:
+        for step in intermediate:
             if isinstance(step, dict) and "query" in step:
                 cypher_query = step["query"]
                 break
-                
-        return AgentResult(answer=answer, cypher=cypher_query)
-        
+
+        return AgentResult(
+            answer=answer,
+            cypher=cypher_query,
+            intermediate_steps=intermediate
+        )
+
     except Exception as e:
         return AgentResult(
-            answer=f"Sorry, query generate karne mein issue aaya: {str(e)}", 
-            cypher=""
+            answer=f"Error: {str(e)}",
+            cypher="",
+            intermediate_steps=[]
         )
