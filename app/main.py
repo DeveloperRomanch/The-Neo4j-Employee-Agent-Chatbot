@@ -42,6 +42,63 @@ def get_logo_svg() -> str:
     except Exception:
         pass
     return ""
+
+
+def login_page() -> None:
+    """Render a clean, modern login form card centered on the screen"""
+    logo_svg = get_logo_svg()
+    
+    # Load login page styling overrides dynamically
+    st.markdown("""
+        <style>
+        div[data-testid="stVerticalBlockBorder"] {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            padding: 40px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            margin-top: 60px !important;
+        }
+        div[data-testid="stVerticalBlockBorder"] svg {
+            max-width: 260px !important;
+            height: auto !important;
+            margin: 0 auto 24px !important;
+            display: block !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.container(border=True):
+            if logo_svg:
+                st.markdown(logo_svg, unsafe_allow_html=True)
+            else:
+                st.markdown("<h1 style='color:#0f172a; text-align:center;'>SynapsesMed</h1>", unsafe_allow_html=True)
+                
+            st.markdown("<h3 style='margin-top:15px; color:#0f172a; font-weight:600; text-align:center;'>Welcome Back</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#64748b; margin-bottom:24px; font-size:14px; text-align:center;'>Please enter your credentials to access the agent.</p>", unsafe_allow_html=True)
+            
+            username = st.text_input("Username", placeholder="Username", label_visibility="collapsed", key="login_username")
+            password = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
+            
+            btn_col1, btn_col2 = st.columns(2)
+            with btn_col1:
+                if st.button("Sign In", use_container_width=True, type="primary", key="login_submit"):
+                    expected_username = os.getenv("APP_USERNAME", "admin")
+                    expected_password = os.getenv("APP_PASSWORD", "admin123")
+                    
+                    if username == expected_username and password == expected_password:
+                        st.session_state.authenticated = True
+                        st.session_state.show_login = False
+                        st.query_params["authenticated"] = "true"
+                        st.rerun()
+                    else:
+                        st.error("Incorrect credentials.")
+            with btn_col2:
+                if st.button("Cancel", use_container_width=True, type="secondary", key="login_cancel"):
+                    st.session_state.show_login = False
+                    st.rerun()
 def render_js_helper():
     """Inject JavaScript to manage sidebar responsive collapse/expand behavior"""
     collapse_flag = "true" if st.session_state.get("collapse_sidebar", False) else "false"
@@ -134,6 +191,13 @@ def get_graph() -> EmployeeGraph:
 
 
 def init_state() -> None:
+    if "authenticated" not in st.session_state:
+        if st.query_params.get("authenticated") == "true":
+            st.session_state.authenticated = True
+        else:
+            st.session_state.authenticated = False
+    if "show_login" not in st.session_state:
+        st.session_state.show_login = False
     if "neo4j_settings" not in st.session_state:
         st.session_state.neo4j_settings = load_settings()
     if "collapse_sidebar" not in st.session_state:
@@ -230,8 +294,11 @@ def sidebar() -> None:
         ]
         for q in sample_questions:
             if st.button(q, use_container_width=True, key=f"btn_{q}"):
-                run_question(q)
-                st.session_state.collapse_sidebar = True
+                if not st.session_state.get("authenticated", False):
+                    st.session_state.show_login = True
+                else:
+                    run_question(q)
+                    st.session_state.collapse_sidebar = True
                 st.rerun()
 
         st.subheader("Database Info")
@@ -258,24 +325,50 @@ def sidebar() -> None:
             graph.close()
 
         if st.button("Seed Demo Data", use_container_width=True):
-            st.session_state.collapse_sidebar = True
-            graph = get_graph()
-            try:
-                graph.seed()
-                st.success("Demo data seeded successfully!")
+            if not st.session_state.get("authenticated", False):
+                st.session_state.show_login = True
                 st.rerun()
-            except Exception as e:
-                st.error(f"Seed failed: {e}")
-            finally:
-                graph.close()
+            else:
+                st.session_state.collapse_sidebar = True
+                graph = get_graph()
+                try:
+                    graph.seed()
+                    st.success("Demo data seeded successfully!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Seed failed: {e}")
+                finally:
+                    graph.close()
+
+        # Clear Chat Button in Sidebar
+        if st.button("Clear Chat", use_container_width=True, key="sidebar_clear"):
+            st.session_state.messages = []
+            st.rerun()
+
+        # Logout Section (only show if authenticated)
+        if st.session_state.get("authenticated", False):
+            st.markdown('<div class="logout-section">', unsafe_allow_html=True)
+            if st.button("Logout", use_container_width=True, key="sidebar_logout"):
+                st.session_state.authenticated = False
+                st.session_state.messages = []
+                st.query_params.pop("authenticated", None)
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ====================== MAIN APP ======================
 def main():
     load_css()
     init_state()
+    
     render_js_helper()
     sidebar()
+
+    # If show_login is True, only show the login page
+    if st.session_state.get("show_login", False):
+        login_page()
+        return
+
 
     # Header
     logo_svg = get_logo_svg()
@@ -301,17 +394,13 @@ def main():
             </div>
         """, unsafe_allow_html=True)
 
-    # Clear Chat Button
-    col1, col2 = st.columns([4, 1])
-    with col2:
-        if st.button("Clear Chat", use_container_width=True):
-            st.session_state.messages = []
-            st.rerun()
-
     # Chat Input
     question = st.chat_input("Ask about employees, departments, salaries..")
     if question:
-        run_question(question)
+        if not st.session_state.get("authenticated", False):
+            st.session_state.show_login = True
+        else:
+            run_question(question)
         st.rerun()
 
     # Display Messages

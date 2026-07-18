@@ -6,6 +6,10 @@
     font-family: 'Inter', system-ui, sans-serif;
 }
 
+svg {
+    width: 600px;
+}
+
 .stApp {
     background-color: #f8fafc;
 }
@@ -27,7 +31,7 @@
 }
 
 .site-branding svg {
-    max-width: 500px;
+    max-width: 400px;
     height: auto;
 }
 
@@ -180,16 +184,6 @@ section[data-testid="stSidebar"] .stButton button:active {
     border-color: #64748b !important;
 }
 
-/* Header and spacing correction */
-header[data-testid="stHeader"] {
-    background-color: transparent !important;
-    pointer-events: none;
-}
-
-header[data-testid="stHeader"] button,
-header[data-testid="stHeader"] a {
-    pointer-events: auto;
-}
 
 /* Mobile view spacing (default) */
 .main .block-container,
@@ -222,4 +216,24 @@ div[data-testid="stAppViewBlockContainer"] {
 div[data-testid="stCodeBlock"] {
     border-radius: 8px;
     background-color: #1e2937 !important;
+}
+
+/* Sidebar Logout Button styling */
+.logout-section {
+    margin-top: 30px;
+    border-top: 1px solid #334155;
+    padding-top: 20px;
+}
+
+.logout-section button {
+    background-color: #b91c1c !important;
+    color: #ffffff !important;
+    border: 1px solid #991b1b !important;
+    transition: background-color 0.2s;
+}
+
+.logout-section button:hover {
+    background-color: #dc2626 !important;
+    border-color: #b91c1c !important;
+    color: #ffffff !important;
 }
