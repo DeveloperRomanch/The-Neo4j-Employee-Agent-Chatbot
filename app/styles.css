@@ -137,7 +137,10 @@ section[data-testid="stSidebar"] {
 
 .stButton button {
     border-radius: 8px;
-    height: 42px;
+    min-height: 42px;
+    height: auto !important;
+    padding: 8px 16px !important;
+    line-height: 1.4 !important;
 }
 
 .sidebar-logo {
