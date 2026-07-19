@@ -250,28 +250,62 @@ def run_question(question: str) -> None:
     })
 
 
-def render_message(message: dict) -> None:
-    if message.get("cypher"):
-        st.caption("Cypher query executed")
-        st.code(message["cypher"], language="cypher")
+def highlight_cypher(query: str) -> str:
+    import re
+    if not query:
+        return ""
+    escaped = html.escape(query)
+    
+    # Cypher keywords
+    keywords = [
+        "MATCH", "RETURN", "ORDER BY", "DESC", "LIMIT", "WHERE", 
+        "CREATE", "MERGE", "SET", "WITH", "UNWIND", "AS", 
+        "AND", "OR", "IN", "count"
+    ]
+    
+    for kw in keywords:
+        pattern = r"\b" + re.escape(kw) + r"\b"
+        escaped = re.sub(
+            pattern, 
+            lambda m: f'<span style="color: #60a5fa; font-weight: 600;">{m.group(0)}</span>', 
+            escaped, 
+            flags=re.IGNORECASE
+        )
+    return escaped
 
+
+def render_message(message: dict) -> None:
     is_user = message["role"] == "user"
     avatar = "👤" if is_user else "🧠"
     title = "You" if is_user else "Neo4j Agent"
     css_class = "user-message" if is_user else "agent-message"
 
-    st.markdown(f"""
-        <div class="chat-card {css_class}">
-            <div class="chat-avatar">{avatar}</div>
-            <div class="chat-body">
-                <div class="chat-meta">
-                    <strong>{title}</strong>
-                    <span>{message["time"]}</span>
-                </div>
-                <div class="chat-text">{html.escape(message["content"])}</div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    cypher_html = ""
+    if message.get("cypher"):
+        highlighted_cypher = highlight_cypher(message["cypher"])
+        cypher_html = (
+            '<div class="cypher-executed-container">'
+            '<div class="cypher-executed-caption">Cypher query executed</div>'
+            f'<div class="cypher-code-box"><div class="cypher-code-text">{highlighted_cypher}</div></div>'
+            '</div>'
+        )
+
+    # Clean HTML construction with no leading indents to prevent markdown code block formatting
+    chat_card_html = (
+        f'<div class="chat-card {css_class}">'
+        f'<div class="chat-avatar">{avatar}</div>'
+        f'<div class="chat-body">'
+        f'<div class="chat-meta">'
+        f'<strong>{title}</strong>'
+        f'<span>{message["time"]}</span>'
+        f'</div>'
+        f'<div class="chat-text">{html.escape(message["content"])}</div>'
+        f'{cypher_html}'
+        f'</div>'
+        f'</div>'
+    )
+
+    st.markdown(chat_card_html, unsafe_allow_html=True)
 
 
 def sidebar() -> None:
@@ -309,8 +343,34 @@ def sidebar() -> None:
         st.markdown("**Type:** Neo4j graph database")
 
         with st.expander("🔌 Configure Neo4j Connection", expanded=False):
-            # ... (your connection form code - kept same)
-            pass  # I'll expand this if needed
+            if not st.session_state.get("authenticated", False):
+                st.info("Please login to configure the database connection.")
+            else:
+                new_uri = st.text_input("Connection URI", value=settings.uri, key="conn_uri")
+                new_user = st.text_input("Username", value=settings.username, key="conn_user")
+                new_pwd = st.text_input("Password", type="password", value=settings.password, key="conn_pwd")
+                new_db = st.text_input("Database Name", value=settings.database, key="conn_db")
+                
+                if st.button("Save & Connect", use_container_width=True, key="conn_save"):
+                    os.environ["NEO4J_URI"] = new_uri
+                    os.environ["NEO4J_USERNAME"] = new_user
+                    os.environ["NEO4J_PASSWORD"] = new_pwd
+                    os.environ["NEO4J_DATABASE"] = new_db
+                    
+                    st.session_state.neo4j_settings = Neo4jSettings(
+                        uri=new_uri,
+                        username=new_user,
+                        password=new_pwd,
+                        database=new_db
+                    )
+                    
+                    # Clear agent cache to force reconnection
+                    import app.agent as agent
+                    agent._cached_chain = None
+                    agent._cached_graph = None
+                    
+                    st.success("Connection settings updated!")
+                    st.rerun()
 
         # Connection Status
         graph = get_graph()
